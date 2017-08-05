@@ -1,83 +1,101 @@
-import token from '../config/config.js'
+let TelegramBot = require('node-telegram-bot-api');
+let token = '';
+let mysql = require('mysql');
+let bot = new TelegramBot(token, {polling: true});
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [];
 
-var TelegramBot = require('node-telegram-bot-api');
-// var token = require('./config/config.js')
-
-var bot = new TelegramBot(token, {
-    polling: true
+let con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "cfvgbh",
+    database: "pizzeria"
 });
-var pizza_okey = "Окей",
-    pizza_bambolina = 'Бамболіна',
-    pizza_manhattan = "Manhattan";
 
-var pizza_okey_one = "Фірменна - 50грн",
-    pizza_okey_two = "Подвійний сир - 70грн",
-    pizza_bambolina_one = "Фірменна - 50грн",
-    pizza_bambolina_two = "Подвійний сир - 70грн",      
-    pizza_manhattan_one = "Фірменна - 50грн",
-    pizza_manhattan_two = "Подвійний сир - 70грн"
+con.connect(function (err) {
+    if (err) throw err;
+    console.log("Connected!");
 
-// Choice pizzeria
-bot.onText(/\/start/, (msg) => {
-    bot.sendMessage(msg.chat.id, "Привіт, ви бачите список піцерій,клікніть на будь-яку з них, де хочете замовити піцу ", {
-        "reply_markup": {
-            "keyboard": [
-                ["Окей"],
-                ["Бамболіна"],
-                ["Manhattan"]
-            ]
-        }
+});
+
+bot.onText(/\/выбратьпиццерию/, function (msg) {
+    choosePizzeria(msg);
+});
+
+bot.on('callback_query', function (msg) {
+    if (fillings.includes(msg.data)) {
+        saveToBucket('fillings', msg.data)
+    } else if(pizzerias.includes(msg.data)) {
+
+        createPizza(msg);
+    }
+});
+
+//Work with bd
+
+let getInfo = (sql, col1, col2) => {
+    return new Promise(function (resolve, reject) {
+        con.query(sql, function (err, result) {
+            if (err) throw err;
+            let res = JSON.stringify(result);
+            let res2 = JSON.parse(res);
+            for (let i = 0; i < res2.length; i++) {
+                let entry = [];
+                    if (col2) {
+                        entry = [{text: `${res2[i][col1]} ${res2[i][col2]}`, callback_data:`${res2[i][col1]} ${res2[i][col2]}` }];
+                        fillings.push(`${res2[i][col1]} ${res2[i][col2]}`);}
+                    else {
+                        entry = [{text: `${res2[i][col1]}`, callback_data:`${res2[i][col1]}` }];
+                        pizzerias.push(`${res2[i][col1]}`);
+                    }
+                mainEntry.push(entry);
+            }
+            if (err) {
+                return reject(err);
+            }
+            resolve(mainEntry);
+        });
+        mainEntry.length = 0;
+
+    })
+};
+
+let choosePizzeria = (msg) =>{
+    getInfo("SELECT * FROM pizzeria", 'name').then(function (result) {
+        createButtons(mainEntry, msg);
     });
-});
-// Choice pizza
-bot.on('message', (msg) => {
-    if (msg.text.indexOf(pizza_okey) === 0) {
-        bot.sendMessage(msg.chat.id, "Ви бачите назву піци та її ціну. Виберіть піццу:", {
-            "reply_markup": {
-                "keyboard": [
-                    ["Фірменна - 50грн"],
-                    ["Подвійний сир - 70грн"]
-                ]
-            }
-        });
-    }
+};
 
-    if (msg.text.indexOf(pizza_bambolina) === 0) {
-        bot.sendMessage(msg.chat.id, "Ви бачите назву піци та її ціну. Виберіть піццу:", {
-            "reply_markup": {
-                "keyboard": [
-                    ["Фірменна - 50грн"],
-                    ["Подвійний сир - 70грн"]
-                ]
-            }
-        });
-    }
+let createPizza = (msg) => {
+    getInfo("SELECT * FROM filter", 'filter', 'cost').then(function (result) {
+        createButtons(mainEntry, msg);
+    });
+};
 
-    if (msg.text.indexOf(pizza_manhattan) === 0) {
-        bot.sendMessage(msg.chat.id, "Ви бачите назву піци та її ціну. Виберіть піццу:", {
-            "reply_markup": {
-                "keyboard": [
-                    ["Фірменна - 50грн"],
-                    ["Подвійний сир - 70грн"]
-                ]
-            }
-        });
-    }
-   
-});
- //choice count pizza
-bot.on("message",(msg) =>{
-    if (msg.text.indexOf(pizza_okey_one) === 0 || msg.text.indexOf(pizza_okey_two) === 0 || 
-        msg.text.indexOf(pizza_bambolina_one) === 0 || msg.text.indexOf(pizza_bambolina_two) )  {
-        bot.sendMessage(msg.chat.id, "Виберіть кількість піц:", {
-            "reply_markup": {
-                "keyboard": [
-                    ["1"],
-                    ["2"],
-                    ["3"],
-                ]
-            }
-        });
-        }
-})
-   
+// Save to bucket
+
+let saveToBucket = (title, order) => {
+    let list = {
+        title: title,
+        order: order
+    };
+    bucketList.push(list);
+    console.log(bucketList);
+};
+
+// Create buttons => move to another file? //
+
+let createButtons = (entry2, msg) => {
+    let createdButtons = {
+        title: 'Выберите начинку',
+        buttons: []
+    };
+    let text = createdButtons.title;
+    let options = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: entry2,
+            parse_mode: 'Markdown',
+        })
+    };
+    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+    bot.sendMessage(chat, text, options);
+};
