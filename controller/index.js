@@ -2,7 +2,7 @@ let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone;
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0;
 
 let con = mysql.createConnection({
     host: "localhost",
@@ -24,24 +24,31 @@ bot.onText(/\/выбратьпиццерию/, function (msg) {
 
 bot.onText(/\/адресс (.+)/, function (msg, match) {
     let resp = match[1];
+    address = match[1];
     saveToBucket('address', resp);
     bot.sendMessage(chat, 'введите телефон')
 });
 
 bot.onText(/\/телефон (.+)/, function (msg, match) {
-    telephone = msg.data;
-    // console.log(msg);
+    let resp = match[1];
+    telephone = resp;
     saveToBd(msg);
+    bot.sendMessage(msg.from.id, 'Ваш заказ принят')
 });
 
 bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
         saveToBucket('fillings', msg.data)
     } else if (pizzerias.includes(msg.data)) {
-        createPizza(msg);
+        mainChoise(msg);
     } else if (msg.data == 'Да') {
-        // saveToBd(msg);
         enterAddress(msg);
+    } else if(msg.data == 'Посмотреть заказ') {
+        showBucket(msg);
+    } else if(msg.data == 'Готовую'){
+        choosePizza(msg);
+    } else if(msg.data == 'Собрать свою'){
+        createPizza(msg);
     }
 });
 
@@ -74,39 +81,84 @@ let getInfo = (sql, col1, col2) => {
             resolve(mainEntry);
         });
         mainEntry.length = 0;
-
     })
+};
+
+let mainChoise = (msg) => {
+    let text = 'Готовую пиццу или собрать свою?';
+    let options = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{text: 'Готовую', callback_data: 'Готовую'}],
+                [{text: 'Собрать свою', callback_data: 'Собрать свою'}]
+            ],
+            parse_mode: 'Markdown',
+        })
+    };
+    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+    bot.sendMessage(chat, text, options);
 };
 
 let choosePizzeria = (msg) => {
     getInfo("SELECT * FROM pizzeria", 'name').then(function (result) {
-        createButtons(mainEntry, msg);
-    });
+        createButtons(mainEntry, msg, 'Выберите пиццу');
+    }).then(
+
+    )
 };
 
 let createPizza = (msg) => {
     getInfo("SELECT * FROM filter", 'filter', 'cost').then(function (result) {
-        createButtons(mainEntry, msg);
+        createButtons(mainEntry, msg, 'Выберите начинку');
         saveButton(msg);
+    });
+};
 
+let choosePizza = (msg) => {
+    getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function (result) {
+        createButtons(mainEntry, msg, 'Выберите пиццу');
+        saveButton(msg);
     });
 };
 
 let enterAddress = (msg) => {
     chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, 'введите адресс').then(function (result) {
+    bot.sendMessage(chat, 'Введите адресс').then(function (result) {
         address = msg.data;
     })
+};
+
+let showBucket = (msg) => {
+    let buttons = [];
+    for(let i = 0; i <=bucketList.length-1; i++){
+        let entry = [{
+            text: `${bucketList[i].order}`,
+            callback_data: `${bucketList[i].order}`
+        }];
+        buttons.push(entry);
+    }
+    // console.log(msg.from.id);
+    createButtons(buttons, msg, 'Ваша корзина');
+    formBill(msg);
+    saveButton(msg);
+};
+
+let formBill = (msg) => {
+    for(let i = 0; i <=bucketList.length-1; i++){
+
+        bill += parseInt(bucketList[i].order.split(' ')[1]);
+    }
+    console.log(bill);
+    bot.sendMessage(msg.from.id, `Ваш заказ ${bill}`)
 };
 
 // Save to BD
 
 let saveToBd = (msg) => {
-    console.log(msg);
     let sql = `INSERT INTO orders (first_name, last_name, list, address, phone) VALUES (
         '${msg.from.first_name}',
         '${msg.from.last_name}',
-        '${bucketList}', 'Company Inc', '0509049587')`;
+        '${bucketList}', '${address}', '${telephone}')`;
     console.log(sql);
     con.query(sql, function (err, result) {
         if (err) throw err;
@@ -114,39 +166,34 @@ let saveToBd = (msg) => {
     });
 };
 
-
 let saveButton = (msg) => {
     let text = 'Далее?';
     let options = {
         reply_markup: JSON.stringify({
-            inline_keyboard: [[{text: 'Да', callback_data: 'Да'}]],
+            inline_keyboard: [
+                [{text: 'Да', callback_data: 'Да'}],
+                [{text: 'Посмотреть заказ', callback_data: 'Посмотреть заказ'}]
+            ],
             parse_mode: 'Markdown',
         })
     };
     chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
     bot.sendMessage(chat, text, options);
-
 };
 
 // Save to bucket
 
 let saveToBucket = (title, order) => {
-    let list = [{
+    let list = {
         title: title,
         order: order
-    }];
+    };
     bucketList.push(list);
-    console.log(bucketList);
 };
 
 // Create buttons => move to another file? //
 
-let createButtons = (entry2, msg) => {
-    let createdButtons = {
-        title: 'Выберите начинку',
-        buttons: []
-    };
-    let text = createdButtons.title;
+let createButtons = (entry2, msg, title) => {
     let options = {
         reply_markup: JSON.stringify({
             inline_keyboard: entry2,
@@ -154,5 +201,5 @@ let createButtons = (entry2, msg) => {
         })
     };
     chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, text, options);
+    bot.sendMessage(chat, title, options);
 };
