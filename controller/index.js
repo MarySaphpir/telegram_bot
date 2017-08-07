@@ -2,7 +2,8 @@ let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0;
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0,
+    selectedPizzeria;
 
 let con = mysql.createConnection({
     host: "localhost",
@@ -41,13 +42,14 @@ bot.on('callback_query', function (msg) {
         saveToBucket('fillings', msg.data)
     } else if (pizzerias.includes(msg.data)) {
         mainChoise(msg);
-    } else if (msg.data == 'Да') {
+        selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
+    } else if (msg.data === 'Да') {
         enterAddress(msg);
-    } else if(msg.data == 'Посмотреть заказ') {
+    } else if (msg.data === 'Посмотреть заказ') {
         showBucket(msg);
-    } else if(msg.data == 'Готовую'){
+    } else if (msg.data === 'Готовую') {
         choosePizza(msg);
-    } else if(msg.data == 'Собрать свою'){
+    } else if (msg.data === 'Собрать свою') {
         createPizza(msg);
     }
 });
@@ -62,23 +64,26 @@ let getInfo = (sql, col1, col2) => {
             let res2 = JSON.parse(res);
             for (let i = 0; i < res2.length; i++) {
                 let entry = [];
-                if (col2) {
-                    entry = [{
-                        text: `${res2[i][col1]} ${res2[i][col2]}`,
-                        callback_data: `${res2[i][col1]} ${res2[i][col2]}`
-                    }];
-                    fillings.push(`${res2[i][col1]} ${res2[i][col2]}`);
-                }
-                else {
-                    entry = [{text: `${res2[i][col1]}`, callback_data: `${res2[i][col1]}`}];
-                    pizzerias.push(`${res2[i][col1]}`);
+                if ( pizzerias.includes(res2[i][col1]) || res2[i]['pizzeria_id'] === selectedPizzeria) {
+                    console.log('e');
+                    if (col2) {
+                        entry = [{
+                            text: `${res2[i][col1]} ${res2[i][col2]}`,
+                            callback_data: `${res2[i][col1]} ${res2[i][col2]}`
+                        }];
+                        fillings.push(`${res2[i][col1]} ${res2[i][col2]}`);
+                    }
+                    else {
+                        entry = [{text: `${res2[i][col1]}`, callback_data: `${res2[i][col1]}`}];
+                        pizzerias.push(`${res2[i][col1]}`);
+                    }
                 }
                 mainEntry.push(entry);
+                if (err) {
+                    return reject(err);
+                }
+                resolve(mainEntry);
             }
-            if (err) {
-                return reject(err);
-            }
-            resolve(mainEntry);
         });
         mainEntry.length = 0;
     })
@@ -130,7 +135,7 @@ let enterAddress = (msg) => {
 
 let showBucket = (msg) => {
     let buttons = [];
-    for(let i = 0; i <=bucketList.length-1; i++){
+    for (let i = 0; i <= bucketList.length - 1; i++) {
         let entry = [{
             text: `${bucketList[i].order}`,
             callback_data: `${bucketList[i].order}`
@@ -144,7 +149,7 @@ let showBucket = (msg) => {
 };
 
 let formBill = (msg) => {
-    for(let i = 0; i <=bucketList.length-1; i++){
+    for (let i = 0; i <= bucketList.length - 1; i++) {
 
         bill += parseInt(bucketList[i].order.split(' ')[1]);
     }
