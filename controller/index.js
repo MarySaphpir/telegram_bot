@@ -2,7 +2,7 @@ let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0, order = [],
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], order = [], address, telephone, bill = 0,
     selectedPizzeria;
 
 let con = mysql.createConnection({
@@ -32,7 +32,7 @@ bot.onText(/\/телефон (.+)/, function (msg, match) {
     let resp = match[1];
     telephone = resp;
     saveToBd(msg);
-    bot.sendMessage(msg.from.id, 'Ваш заказ принят')
+    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
     bucketList.length = 0;
 });
 
@@ -64,7 +64,6 @@ let getInfo = (sql, col1, col2) => {
             for (let i = 0; i < res2.length; i++) {
                 let entry = [];
                 if ( pizzerias.includes(res2[i][col1]) || res2[i]['pizzeria_id'] === selectedPizzeria) {
-                    console.log('e');
                     if (col2) {
                         entry = [{
                             text: `${res2[i][col1]} ${res2[i][col2]}`,
@@ -104,7 +103,7 @@ let mainChoise = (msg) => {
 };
 
 let choosePizzeria = (msg) => {
-    getInfo("SELECT * FROM pizzeria", 'name').then(function (result) {
+    getInfo("SELECT * FROM pizzeria", 'name').then(function () {
         createButtons(mainEntry, msg, 'Выберите пиццу');
     }).then(
 
@@ -112,14 +111,14 @@ let choosePizzeria = (msg) => {
 };
 
 let createPizza = (msg) => {
-    getInfo("SELECT * FROM filter", 'filter', 'cost').then(function (result) {
+    getInfo("SELECT * FROM filter", 'filter', 'cost').then(function () {
         createButtons(mainEntry, msg, 'Выберите начинку');
         saveButton(msg);
     });
 };
 
 let choosePizza = (msg) => {
-    getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function (result) {
+    getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function () {
         createButtons(mainEntry, msg, 'Выберите пиццу');
         saveButton(msg);
     });
@@ -127,7 +126,7 @@ let choosePizza = (msg) => {
 
 let enterAddress = (msg) => {
     chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, 'Введите адресс').then(function (result) {
+    bot.sendMessage(chat, 'Введите адресс').then(function () {
         address = msg.data;
     })
 };
@@ -141,33 +140,45 @@ let showBucket = (msg) => {
         }];
         buttons.push(entry);
     }
-    // console.log(msg.from.id);
     createButtons(buttons, msg, 'Ваша корзина');
     formBill(msg);
     saveButton(msg);
 };
 
 let formBill = (msg) => {
-    for (let i = 0; i <= bucketList.length - 1; i++) {
+    getTotalAmount();
+    getOrderInfo();
+    bot.sendMessage(msg.from.id, `Ваш заказ ${bill}`)
+};
 
+let getTotalAmount = () => {
+    for (let i = 0; i <= bucketList.length - 1; i++) {
         bill += parseInt(bucketList[i].split(' ')[1]);
     }
-    console.log(bill);
-    bot.sendMessage(msg.from.id, `Ваш заказ ${bill}`)
+    console.log('bill ' + bill);
+};
+let getOrderInfo = () => {
+    for (let i = 0; i <= bucketList.length - 1; i++) {
+        order.push(bucketList[i].split(' ')[0]);
+    }
+    console.log('order ' + order);
+    console.log('bucketList ' + bucketList);
+
 };
 
 // Save to BD
 
 let saveToBd = (msg) => {
-    let sql = `INSERT INTO orders (first_name, last_name, list, address, phone) VALUES (
+    formBill(msg);
+    let sql = `INSERT INTO orders (first_name, last_name, list, address, phone, pizzeria_id, amount) VALUES (
         '${msg.from.first_name}',
         '${msg.from.last_name}',
-        '${bucketList}', '${address}', '${telephone}')`;
+        '${order}', '${address}', '${telephone}' , '${selectedPizzeria}', '${bill}')`;
     console.log(sql);
-    con.query(sql, function (err, result) {
+    con.query(sql, function (err) {
         if (err) throw err;
-        console.log("1 record inserted");
     });
+    console.log(order);
 };
 
 let saveButton = (msg) => {
