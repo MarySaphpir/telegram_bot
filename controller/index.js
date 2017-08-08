@@ -2,7 +2,7 @@ let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0,
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone, bill = 0, order = [],
     selectedPizzeria;
 
 let con = mysql.createConnection({
@@ -24,9 +24,7 @@ bot.onText(/\/выбратьпиццерию/, function (msg) {
 });
 
 bot.onText(/\/адресс (.+)/, function (msg, match) {
-    let resp = match[1];
     address = match[1];
-    saveToBucket('address', resp);
     bot.sendMessage(chat, 'введите телефон')
 });
 
@@ -35,11 +33,12 @@ bot.onText(/\/телефон (.+)/, function (msg, match) {
     telephone = resp;
     saveToBd(msg);
     bot.sendMessage(msg.from.id, 'Ваш заказ принят')
+    bucketList.length = 0;
 });
 
 bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
-        saveToBucket('fillings', msg.data)
+        saveToBucket(msg.data)
     } else if (pizzerias.includes(msg.data)) {
         mainChoise(msg);
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
@@ -137,8 +136,8 @@ let showBucket = (msg) => {
     let buttons = [];
     for (let i = 0; i <= bucketList.length - 1; i++) {
         let entry = [{
-            text: `${bucketList[i].order}`,
-            callback_data: `${bucketList[i].order}`
+            text: `${bucketList[i]}`,
+            callback_data: `${bucketList[i]}`
         }];
         buttons.push(entry);
     }
@@ -151,7 +150,7 @@ let showBucket = (msg) => {
 let formBill = (msg) => {
     for (let i = 0; i <= bucketList.length - 1; i++) {
 
-        bill += parseInt(bucketList[i].order.split(' ')[1]);
+        bill += parseInt(bucketList[i].split(' ')[1]);
     }
     console.log(bill);
     bot.sendMessage(msg.from.id, `Ваш заказ ${bill}`)
@@ -188,12 +187,8 @@ let saveButton = (msg) => {
 
 // Save to bucket
 
-let saveToBucket = (title, order) => {
-    let list = {
-        title: title,
-        order: order
-    };
-    bucketList.push(list);
+let saveToBucket = (order) => {
+    bucketList.push(order);
 };
 
 // Create buttons => move to another file? //
