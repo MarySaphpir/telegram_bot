@@ -1,0 +1,68 @@
+*{
+    box-sizing: border-box;
+}
+body{
+    min-width: 480px;
+    max-width: 960px;
+    margin: 0 auto;
+}
+h1.welcome{
+    text-align: center;
+    font-size: 36px;
+    margin: 15px;
+}
+p.welcome-text{
+    text-align: center;
+    font-size: 20px;
+}
+.start-text{
+    display: inline-block;
+    color: green;
+    border: 1px solid green;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 5px;
+}
+.start-btn{
+    width: 100%;
+}
+.pizza-basket{
+    color: #67ed31;
+    float: right;
+    margin-right: 15px;
+}
+
+/* animation */
+.welcome-img{
+    text-align: center;
+    margin: 15px;
+}
+img.pizza {
+    animation: 3s linear 0s normal none infinite running pizza;
+    -webkit-animation: 3s linear 0s normal none infinite running pizza;
+    width: 100px;
+}
+@keyframes pizza {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+@-webkit-keyframes pizza {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+/* end animation */
+
+.pizzeria{
+    text-align: center;
+}
+.map a{
+    color: #fff;
+}
