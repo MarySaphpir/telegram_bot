@@ -23,19 +23,6 @@ bot.onText(/\/выбратьпиццерию/, function (msg) {
     chat = msg;
 });
 
-bot.onText(/\/адресс (.+)/, function (msg, match) {
-    address = match[1];
-    bot.sendMessage(chat, 'введите телефон')
-});
-
-bot.onText(/\/телефон (.+)/, function (msg, match) {
-    let resp = match[1];
-    telephone = resp;
-    saveToBd(msg);
-    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-    bucketList.length = 0;
-});
-
 bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
         saveToBucket(msg.data)
@@ -44,6 +31,7 @@ bot.on('callback_query', function (msg) {
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
     } else if (msg.data === 'Да') {
         enterAddress(msg);
+        getTelephone(msg);
     } else if (msg.data === 'Посмотреть заказ') {
         showBucket(msg);
     } else if (msg.data === 'Готовую') {
@@ -63,13 +51,13 @@ let getInfo = (sql, col1, col2) => {
             let res2 = JSON.parse(res);
             for (let i = 0; i < res2.length; i++) {
                 let entry = [];
-                if ( pizzerias.includes(res2[i][col1]) || res2[i]['pizzeria_id'] === selectedPizzeria) {
+                if (pizzerias.includes(res2[i][col1]) || res2[i]['pizzeria_id'] === selectedPizzeria) {
                     if (col2) {
                         entry = [{
-                            text: `${res2[i][col1]} ${res2[i][col2]}`,
-                            callback_data: `${res2[i][col1]} ${res2[i][col2]}`
+                            text: `${res2[i][col1]} - ${res2[i][col2]} грн`,
+                            callback_data: `${res2[i][col1]} -  ${res2[i][col2]}`
                         }];
-                        fillings.push(`${res2[i][col1]} ${res2[i][col2]}`);
+                        fillings.push(`${res2[i][col1]} -  ${res2[i][col2]}`);
                     }
                     else {
                         entry = [{text: `${res2[i][col1]}`, callback_data: `${res2[i][col1]}`}];
@@ -86,6 +74,7 @@ let getInfo = (sql, col1, col2) => {
         mainEntry.length = 0;
     })
 };
+// choosing
 
 let mainChoise = (msg) => {
     let text = 'Готовую пиццу или собрать свою?';
@@ -102,12 +91,11 @@ let mainChoise = (msg) => {
     bot.sendMessage(chat, text, options);
 };
 
+
 let choosePizzeria = (msg) => {
     getInfo("SELECT * FROM pizzeria", 'name').then(function () {
         createButtons(mainEntry, msg, 'Выберите пиццу');
-    }).then(
-
-    )
+    })
 };
 
 let createPizza = (msg) => {
@@ -124,11 +112,42 @@ let choosePizza = (msg) => {
     });
 };
 
+///
+
 let enterAddress = (msg) => {
     chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
     bot.sendMessage(chat, 'Введите адресс').then(function () {
-        address = msg.data;
+    }).then(ans => {
+        bot.on('message', (msg) => {
+            address = msg.text;
+            console.log(address);
+            bot.sendMessage(chat, 'Введите телефон').then(function () {
+            }).then(ans => {
+                bot.on('message', (msg) => {
+                    telephone = msg.text;
+                    console.log(telephone);
+                    saveToBd(msg);
+                    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+                    bucketList.length = 0;
+                });
+                console.log(msg);
+            });
+        })
     })
+};
+
+let getTelephone = (msg) => {
+    bot.sendMessage(chat, 'Введите телефон').then(function () {
+    }).then(ans => {
+        bot.on('message', (msg) => {
+            telephone = msg.text;
+            console.log(telephone);
+            saveToBd(msg);
+            bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+            bucketList.length = 0;
+        });
+
+    });
 };
 
 let showBucket = (msg) => {
@@ -145,6 +164,8 @@ let showBucket = (msg) => {
     saveButton(msg);
 };
 
+// work with bill
+
 let formBill = (msg) => {
     getTotalAmount();
     getOrderInfo();
@@ -153,13 +174,13 @@ let formBill = (msg) => {
 
 let getTotalAmount = () => {
     for (let i = 0; i <= bucketList.length - 1; i++) {
-        bill += parseInt(bucketList[i].split(' ')[1]);
+        bill += parseInt(bucketList[i].split(' - ')[1]);
     }
     console.log('bill ' + bill);
 };
 let getOrderInfo = () => {
     for (let i = 0; i <= bucketList.length - 1; i++) {
-        order.push(bucketList[i].split(' ')[0]);
+        order.push(bucketList[i].split(' - ')[0]);
     }
     console.log('order ' + order);
     console.log('bucketList ' + bucketList);
@@ -178,7 +199,6 @@ let saveToBd = (msg) => {
     con.query(sql, function (err) {
         if (err) throw err;
     });
-    console.log(order);
 };
 
 let saveButton = (msg) => {
