@@ -27,8 +27,10 @@ bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
         saveToBucket(msg.data)
     } else if (pizzerias.includes(msg.data)) {
-        mainChoise(msg);
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
+        showMenu(msg);
+    } else if(msg.data === 'orderPizza'){
+        mainChoise(msg);
     } else if (msg.data === 'Да') {
         enterAddress(msg);
         getTelephone(msg);
@@ -96,6 +98,36 @@ let choosePizzeria = (msg) => {
     getInfo("SELECT * FROM pizzeria", 'name').then(function () {
         createButtons(mainEntry, msg, 'Выберите пиццу');
     })
+};
+
+let showMenu = (msg) => {
+    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+    let pizzeria = pizzerias[selectedPizzeria - 1];
+        getInfo("SELECT * FROM pizza", 'pizza_name', 'composition').then(function () {
+            let res = JSON.stringify(mainEntry);
+            let res2 = JSON.parse(res);
+            // function
+            for (let index in res2) {
+                for (let i in res2[index]) {
+                    bot.sendPhoto(chat, `D:/telegram_bot/img/${pizzeria}/${res2[index][i]['text'].split(' - ')[0]}.jpg`, {caption: `${res2[index][i]['text']}`});
+                }
+            }
+            //
+
+        // function
+            setTimeout(function () {
+                let options = {
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [{text: 'Заказать!', callback_data: 'orderPizza'}],
+                        ]
+                    })
+                };
+                bot.sendMessage(chat, "Готовы сделать заказ?", options)
+            }, 4000)
+        //
+    });
+
 };
 
 let createPizza = (msg) => {
