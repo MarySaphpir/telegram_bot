@@ -3,7 +3,7 @@ let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
 let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], order = [], address, telephone, bill = 0,
-    selectedPizzeria;
+    selectedPizzeria, status;
 
 let con = mysql.createConnection({
     host: "localhost",
@@ -18,26 +18,37 @@ con.connect(function (err) {
 
 });
 
-bot.onText(/\/выбратьпиццерию/, function (msg) {
-    choosePizzeria(msg);
-    chat = msg;
-});
-
 bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
         saveToBucket(msg.data)
     } else if (pizzerias.includes(msg.data)) {
-        mainChoise(msg);
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
+        showMenu(msg);
+    } else if (msg.data === 'orderPizza') {
+        mainChoise(msg);
     } else if (msg.data === 'Да') {
         enterAddress(msg);
-        getTelephone(msg);
     } else if (msg.data === 'Посмотреть заказ') {
         showBucket(msg);
     } else if (msg.data === 'Готовую') {
         choosePizza(msg);
     } else if (msg.data === 'Собрать свою') {
         createPizza(msg);
+    }
+});
+
+bot.on('message', (msg) => {
+    if (msg.text === '/выбратьпиццерию') {
+        choosePizzeria(msg);
+        chat = msg;
+    } else if (status === 'enteredAddress') {
+        console.log(msg.text);
+        getTelephone(msg);
+    } else if (status === 'saveToBd') {
+        telephone = msg.text;
+        saveToBd(msg);
+        bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+        bucketList.length = 0;
     }
 });
 
@@ -55,9 +66,9 @@ let getInfo = (sql, col1, col2) => {
                     if (col2) {
                         entry = [{
                             text: `${res2[i][col1]} - ${res2[i][col2]} грн`,
-                            callback_data: `${res2[i][col1]} -  ${res2[i][col2]}`
+                            callback_data: `${res2[i][col1]} - ${res2[i][col2]}`
                         }];
-                        fillings.push(`${res2[i][col1]} -  ${res2[i][col2]}`);
+                        fillings.push(`${res2[i][col1]} - ${res2[i][col2]}`);
                     }
                     else {
                         entry = [{text: `${res2[i][col1]}`, callback_data: `${res2[i][col1]}`}];
@@ -98,6 +109,36 @@ let choosePizzeria = (msg) => {
     })
 };
 
+let showMenu = (msg) => {
+    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+    let pizzeria = pizzerias[selectedPizzeria - 1];
+    getInfo("SELECT * FROM pizza", 'pizza_name', 'composition').then(function () {
+        let res = JSON.stringify(mainEntry);
+        let res2 = JSON.parse(res);
+        // function
+        for (let index in res2) {
+            for (let i in res2[index]) {
+                bot.sendPhoto(chat, `D:/telegram_bot/img/${pizzeria}/${res2[index][i]['text'].split(' - ')[0]}.jpg`, {caption: `${res2[index][i]['text']}`});
+            }
+        }
+        //
+
+        // function
+        setTimeout(function () {
+            let options = {
+                reply_markup: JSON.stringify({
+                    inline_keyboard: [
+                        [{text: 'Заказать!', callback_data: 'orderPizza'}],
+                    ]
+                })
+            };
+            bot.sendMessage(chat, "Готовы сделать заказ?", options)
+        }, 4000)
+        //
+    });
+
+};
+
 let createPizza = (msg) => {
     getInfo("SELECT * FROM filter", 'filter', 'cost').then(function () {
         createButtons(mainEntry, msg, 'Выберите начинку');
@@ -115,39 +156,20 @@ let choosePizza = (msg) => {
 ///
 
 let enterAddress = (msg) => {
-    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, 'Введите адресс').then(function () {
-    }).then(ans => {
-        bot.on('message', (msg) => {
-            address = msg.text;
-            console.log(address);
-            bot.sendMessage(chat, 'Введите телефон').then(function () {
-            }).then(ans => {
-                bot.on('message', (msg) => {
-                    telephone = msg.text;
-                    console.log(telephone);
-                    saveToBd(msg);
-                    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-                    bucketList.length = 0;
-                });
-                console.log(msg);
-            });
-        })
-    })
+    bot.sendMessage(chat, 'Введите адресс')
+        .then(function () {
+            bot.on('message', (msg) => {
+                address = msg.text;
+            })
+        });
+    status = 'enteredAddress';
+
 };
 
 let getTelephone = (msg) => {
+    status = 'saveToBd';
     bot.sendMessage(chat, 'Введите телефон').then(function () {
-    }).then(ans => {
-        bot.on('message', (msg) => {
-            telephone = msg.text;
-            console.log(telephone);
-            saveToBd(msg);
-            bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-            bucketList.length = 0;
-        });
-
-    });
+    })
 };
 
 let showBucket = (msg) => {
