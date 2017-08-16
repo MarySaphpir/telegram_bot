@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Завершення замовлення</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta property="og:title" content="Welcome to pizza_bot">
+    <meta property="og:image" content="../img/pizza.png"> <!--  paste url image -->
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="600">
+    <meta property="og:image:height" content="600">
+    <meta property="og:description" content="Ваше замовлення майже готове. Пройдіть за посиланням, щою завершити...">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/order-page.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.js"></script>
+    <script src="../js/main.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="welcome-img">
+                <a href="../welcome.html" class="welcome-page">
+                    <img class="pizza" src="../img/pizza.png" alt="pizza" title="Почати все спочатку"/>
+                </a>
+            </div>
+            <div class="col s12 m12 wrapper">
+                <h1 class="selected-pizzeria">Name Pizzeria</h1>
+                <div class="our-order">Ваше замовлення: </div>
+                <ol class="selected row">
+                    <li>
+                        <div class="choice col s9 m9">
+                            Name pizza
+                        </div>
+                        <div class="price col s3 m3">
+                            100UAN
+                        </div>
+                    </li>
+                </ol>
+                <div class="row total">
+                    <div class="col s9 m9">
+                        Загальна сума:
+                    </div>
+                    <div class="total-price col s3 m3">
+                        100UAN
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-message">Перевірте дані та підтвердіть замовелення</div>
+                    <form class="col s12">
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">account_circle</i>
+                                <input id="icon_prefix" type="text" class="validate" disabled>
+                                <label for="icon_prefix">First Name</label>
+                            </div>
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">account_circle</i>
+                                <input id="icon_prefix2" type="text" class="validate" disabled>
+                                <label for="icon_prefix2">Last Name</label>
+                            </div>
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">phone</i>
+                                <input id="icon_telephone" type="tel" class="validate" disabled>
+                                <label for="icon_telephone" data-error="wrong" >Telephone</label>
+                            </div>
+                        </div>
+                        <div class="center-align">
+                            <button id="submit" class="btn-large waves-effect waves-light " type="submit" name="action">
+                                Підтвердити
+                                <i class="material-icons right">send</i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
