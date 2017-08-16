@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome pizza_bot</title>
+    <title>Завершення замовлення</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta property="og:title" content="Welcome to pizza_bot">
+    <meta property="og:image" content="../img/pizza.png"> <!--  paste url image -->
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="600">
+    <meta property="og:image:height" content="600">
+    <meta property="og:description" content="Ваше замовлення майже готове. Пройдіть за посиланням, щою завершити...">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="../styles/order-page.css">
@@ -31,59 +37,38 @@
                             100UAN
                         </div>
                     </li>
-                    <li>
-                        <div class="choice col s9 m9">
-                            Name pizza
-                        </div>
-                        <div class="price col s3 m3">
-                            100UAN
-                        </div>
-                    </li>
-                    <li>
-                        <div class="choice col s9 m9">
-                            Name pizza
-                        </div>
-                        <div class="price col s3 m3">
-                            100UAN
-                        </div>
-                    </li>
                 </ol>
                 <div class="row total">
                     <div class="col s9 m9">
                         Загальна сума:
                     </div>
                     <div class="total-price col s3 m3">
-                        300UAN
+                        100UAN
                     </div>
                 </div>
                 <div class="row">
-                    <div class="form-message">Заповніть форму для завершення замовлення</div>
+                    <div class="form-message">Перевірте дані та підтвердіть замовелення</div>
                     <form class="col s12">
                         <div class="row">
                             <div class="input-field col s12">
                                 <i class="material-icons prefix">account_circle</i>
-                                <input id="icon_prefix" type="text" class="validate">
+                                <input id="icon_prefix" type="text" class="validate" disabled>
                                 <label for="icon_prefix">First Name</label>
                             </div>
                             <div class="input-field col s12">
                                 <i class="material-icons prefix">account_circle</i>
-                                <input id="icon_prefix2" type="text" class="validate">
+                                <input id="icon_prefix2" type="text" class="validate" disabled>
                                 <label for="icon_prefix2">Last Name</label>
                             </div>
                             <div class="input-field col s12">
                                 <i class="material-icons prefix">phone</i>
-                                <input id="icon_telephone" type="tel" class="validate">
+                                <input id="icon_telephone" type="tel" class="validate" disabled>
                                 <label for="icon_telephone" data-error="wrong" >Telephone</label>
-                            </div>
-                            <div class="input-field col s12">
-                                <i class="material-icons prefix">email</i>
-                                <input id="email" type="email" class="validate">
-                                <label for="email" data-error="Введіть Email в правильному форматі" data-success="right">Email</label>
                             </div>
                         </div>
                         <div class="center-align">
                             <button id="submit" class="btn-large waves-effect waves-light " type="submit" name="action">
-                                Submit
+                                Підтвердити
                                 <i class="material-icons right">send</i>
                             </button>
                         </div>
