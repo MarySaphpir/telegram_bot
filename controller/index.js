@@ -1,8 +1,11 @@
+import buttons from './Buttons';
+import bucket from './BucketLogic';
+
 let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], order = [], address, telephone, bill = 0,
+let chat, mainEntry = [], fillings = [], pizzerias =[], bucketList = [], address, telephone,
     selectedPizzeria, status;
 
 let con = mysql.createConnection({
@@ -20,16 +23,16 @@ con.connect(function (err) {
 
 bot.on('callback_query', function (msg) {
     if (fillings.includes(msg.data)) {
-        saveToBucket(msg.data)
+        bucket.saveToBucket(msg.data)
     } else if (pizzerias.includes(msg.data)) {
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
         showMenu(msg);
     } else if (msg.data === 'orderPizza') {
-        mainChoise(msg);
+        mainChoice(msg);
     } else if (msg.data === 'Да') {
-        enterAddress(msg);
+        enterAddress(msg, bot);
     } else if (msg.data === 'Посмотреть заказ') {
-        showBucket(msg);
+        bucket.showBucket(msg, bot);
     } else if (msg.data === 'Готовую') {
         choosePizza(msg);
     } else if (msg.data === 'Собрать свою') {
@@ -43,17 +46,17 @@ bot.on('message', (msg) => {
         chat = msg;
     } else if (status === 'enteredAddress') {
         console.log(msg.text);
-        getTelephone(msg);
+        getTelephone(msg, bot);
     } else if (status === 'saveToBd') {
         telephone = msg.text;
-        saveToBd(msg);
+        bucket.saveToBd(msg, telephone, address,selectedPizzeria, con, bot);
         bot.sendMessage(msg.from.id, 'Ваш заказ принят');
         bucketList.length = 0;
     }
 });
 
 //Work with bd
-
+//
 let getInfo = (sql, col1, col2) => {
     return new Promise(function (resolve, reject) {
         con.query(sql, function (err, result) {
@@ -86,26 +89,18 @@ let getInfo = (sql, col1, col2) => {
     })
 };
 // choosing
-
-let mainChoise = (msg) => {
+let mainChoice = (msg) => {
     let text = 'Готовую пиццу или собрать свою?';
-    let options = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{text: 'Готовую', callback_data: 'Готовую'}],
-                [{text: 'Собрать свою', callback_data: 'Собрать свою'}]
-            ],
-            parse_mode: 'Markdown',
-        })
-    };
-    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, text, options);
+    let options = [
+        [{text: 'Готовую', callback_data: 'Готовую'}],
+        [{text: 'Собрать свою', callback_data: 'Собрать свою'}]
+    ];
+    buttons.create(options, msg, text, bot)
 };
-
 
 let choosePizzeria = (msg) => {
     getInfo("SELECT * FROM pizzeria", 'name').then(function () {
-        createButtons(mainEntry, msg, 'Выберите пиццу');
+        buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
     })
 };
 
@@ -122,38 +117,38 @@ let showMenu = (msg) => {
             }
         }
         //
+        setTimeoutForButton();
 
-        // function
-        setTimeout(function () {
-            let options = {
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [{text: 'Заказать!', callback_data: 'orderPizza'}],
-                    ]
-                })
-            };
-            bot.sendMessage(chat, "Готовы сделать заказ?", options)
-        }, 4000)
-        //
     });
 
 };
 
+let setTimeoutForButton = () => {
+    setTimeout(function () {
+        let options = {
+            reply_markup: JSON.stringify({
+                inline_keyboard: [
+                    [{text: 'Заказать!', callback_data: 'orderPizza'}],
+                ]
+            })
+        };
+        bot.sendMessage(chat, "Готовы сделать заказ?", options)
+    }, 4000)
+};
+
 let createPizza = (msg) => {
     getInfo("SELECT * FROM filter", 'filter', 'cost').then(function () {
-        createButtons(mainEntry, msg, 'Выберите начинку');
-        saveButton(msg);
+        buttons.create(mainEntry, msg, 'Выберите начинку', bot);
+        buttons.saveButton(msg);
     });
 };
 
 let choosePizza = (msg) => {
     getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function () {
-        createButtons(mainEntry, msg, 'Выберите пиццу');
-        saveButton(msg);
+        buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
+        buttons.saveButton(msg);
     });
 };
-
-///
 
 let enterAddress = (msg) => {
     bot.sendMessage(chat, 'Введите адресс')
@@ -172,87 +167,3 @@ let getTelephone = (msg) => {
     })
 };
 
-let showBucket = (msg) => {
-    let buttons = [];
-    for (let i = 0; i <= bucketList.length - 1; i++) {
-        let entry = [{
-            text: `${bucketList[i]}`,
-            callback_data: `${bucketList[i]}`
-        }];
-        buttons.push(entry);
-    }
-    createButtons(buttons, msg, 'Ваша корзина');
-    formBill(msg);
-    saveButton(msg);
-};
-
-// work with bill
-
-let formBill = (msg) => {
-    getTotalAmount();
-    getOrderInfo();
-    bot.sendMessage(msg.from.id, `Ваш заказ ${bill}`)
-};
-
-let getTotalAmount = () => {
-    for (let i = 0; i <= bucketList.length - 1; i++) {
-        bill += parseInt(bucketList[i].split(' - ')[1]);
-    }
-    console.log('bill ' + bill);
-};
-let getOrderInfo = () => {
-    for (let i = 0; i <= bucketList.length - 1; i++) {
-        order.push(bucketList[i].split(' - ')[0]);
-    }
-    console.log('order ' + order);
-    console.log('bucketList ' + bucketList);
-
-};
-
-// Save to BD
-
-let saveToBd = (msg) => {
-    formBill(msg);
-    let sql = `INSERT INTO orders (first_name, last_name, list, address, phone, pizzeria_id, amount) VALUES (
-        '${msg.from.first_name}',
-        '${msg.from.last_name}',
-        '${order}', '${address}', '${telephone}' , '${selectedPizzeria}', '${bill}')`;
-    console.log(sql);
-    con.query(sql, function (err) {
-        if (err) throw err;
-    });
-};
-
-let saveButton = (msg) => {
-    let text = 'Далее?';
-    let options = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{text: 'Да', callback_data: 'Да'}],
-                [{text: 'Посмотреть заказ', callback_data: 'Посмотреть заказ'}]
-            ],
-            parse_mode: 'Markdown',
-        })
-    };
-    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, text, options);
-};
-
-// Save to bucket
-
-let saveToBucket = (order) => {
-    bucketList.push(order);
-};
-
-// Create buttons => move to another file? //
-
-let createButtons = (entry2, msg, title) => {
-    let options = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: entry2,
-            parse_mode: 'Markdown',
-        })
-    };
-    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, title, options);
-};
