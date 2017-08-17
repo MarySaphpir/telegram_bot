@@ -1,0 +1,33 @@
+@import "style.css";
+.selected-pizzeria{
+    font-size: 36px;
+    text-align: center;
+}
+.our-order{
+    font-size: 26px;
+    color: #101498;
+}
+.selected li{
+    font-size: 18px;
+    padding: 10px 0;
+}
+.selected li:nth-child(odd){
+    background-color: #dcdcdc;
+}
+.selected li:nth-child(even){
+    background-color: #ececec;
+}
+.price, .total-price{
+    text-align: center;
+}
+.total{
+    font-size: 20px;
+    font-weight: bold;
+}
+.form-message{
+    margin-top: 50px;
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 26px;
+    color: #101498;
+}
