@@ -1,10 +1,13 @@
-import buttons from './Buttons';
-import bucket from './BucketLogic';
+// import buttons from './Buttons';
+// import bucket from './BucketLogic';
 
 let TelegramBot = require('node-telegram-bot-api');
-let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
+let token = '418436060:AAHAg3lRN1ae_zjCoHMgKZB14xUVv5Qdiys';
 let mysql = require('mysql');
-// let express = require('express');
+let express = require('express');
+const buttons = require('./Buttons');
+const bucket = require('./BucketLogic');
+
 let bot = new TelegramBot(token, {polling: true});
 let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], notes = [], address, telephone,
     selectedPizzeria, status;
@@ -197,52 +200,52 @@ let finishOrder = (msg) => {
     bucketList.length = 0;
 };
 
-    // let first_name1, last_name1, list1, address1, phone1, amount1;
-    // let app = express();
-    // app.use(express.static('D:\\telegram_bot\\pages'));
-    // app.use(express.static('D:\\telegram_bot\\styles'));
-    // app.use(express.static('D:\\telegram_bot\\js'));
-    // app.set('views', 'D:\\telegram_bot\\controller');
-    // app.set('view engine', 'jade');
-    //
-    // app.get('/', function (req, res) {
-    //
-    //     let connection = mysql.createConnection({
-    //         host: "localhost",
-    //         user: "root",
-    //         password: "cfvgbh",
-    //         database: "pizzeria"
-    //     });
-    //
-    //     res.setHeader('Content-Type', 'text/html');
-    //     connection.connect(function (err) {
-    //     });
-    //
-    //     connection.query('SELECT * FROM orders ORDER BY id DESC LIMIT 1', function (err, rows) {
-    //         for (let i = 0; i < rows.length; i++) {
-    //             first_name1 = rows[i].first_name;
-    //             last_name1 = rows[i].last_name;
-    //             list1 = rows[i].list;
-    //             address1 = rows[i].address;
-    //             phone1 = rows[i].phone;
-    //             amount1 = rows[i].amount;
-    //         }
-    //         res.render('index', {
-    //             first_name: this.first_name1,
-    //             last_name: last_name1,
-    //             list: list1,
-    //             address: address1,
-    //             phone: phone1,
-    //             amount: amount1
-    //         });
-    //         res.end();
-    //
-    //     });
-    // });
-    //
-    // app.listen(3000, function () {
-    //     console.log('Example app listening on port 3000!');
-    // });
+    let first_name1, last_name1, list1, address1, phone1, amount1;
+    let app = express();
+    app.use(express.static('D:\\telegram_bot\\pages'));
+    app.use(express.static('D:\\telegram_bot\\styles'));
+    app.use(express.static('D:\\telegram_bot\\js'));
+    app.set('views', 'D:\\telegram_bot\\controller');
+    app.set('view engine', 'jade');
+
+    app.get('/', function (req, res) {
+
+        let connection = mysql.createConnection({
+            host: "localhost",
+            user: "root",
+            password: "cfvgbh",
+            database: "pizzeria"
+        });
+
+        res.setHeader('Content-Type', 'text/html');
+        connection.connect(function (err) {
+        });
+
+        connection.query('SELECT * FROM orders ORDER BY id DESC LIMIT 1', function (err, rows) {
+            for (let i = 0; i < rows.length; i++) {
+                first_name1 = rows[i].first_name;
+                last_name1 = rows[i].last_name;
+                list1 = rows[i].list;
+                address1 = rows[i].address;
+                phone1 = rows[i].phone;
+                amount1 = rows[i].amount;
+            }
+            res.render('index', {
+                first_name: this.first_name1,
+                last_name: last_name1,
+                list: list1,
+                address: address1,
+                phone: phone1,
+                amount: amount1
+            });
+            res.end();
+
+        });
+    });
+
+    app.listen(3000, function () {
+        console.log('Example app listening on port 3000!');
+    });
 
 let funStuff = (msg) => {
 
