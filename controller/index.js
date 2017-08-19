@@ -6,7 +6,7 @@ let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 // let express = require('express');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone,
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], notes = [], address, telephone,
     selectedPizzeria, status;
 
 let con = mysql.createConnection({
@@ -48,21 +48,12 @@ bot.on('callback_query', function (msg) {
 
 bot.on('message', (msg) => {
     if (msg.text === '/start'){
+        funStuff(msg);
         firstChoice(msg);
     }else if (status === 'enteredAddress') {
         getTelephone(msg, bot);
     } else if (status === 'saveToBd') {
-        let phoneno = /^\[0-9]{10}/;
-        if(msg.text.match(phoneno)) {
-            telephone = msg.text;
-            bucket.saveToBd(msg, telephone, address, selectedPizzeria, con, bot);
-            bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-            bucketList.length = 0;
-        }
-        else {
-            bot.sendMessage(chat, 'Введите повторно телефон');
-            getTelephone(msg, bot);
-        }
+        validatePhone(msg)
     }
 });
 
@@ -191,15 +182,22 @@ let getTelephone = (msg) => {
     })
 };
 
-let validatePhone = (telephone) => {
-    let phoneno = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-    if(telephone.value.match(phoneno)) {
-        telephone = telephone;
-        bot.sendMessage(chat, 'Введите телефон12121')
+let validatePhone = (msg) => {
+    let phoneno = /^[0-9]{9,10}$/;
+    if(msg.text.match(phoneno)) {
+        finishOrder(msg);
     }
     else {
-        bot.sendMessage(chat, 'Введите 1345')
+        bot.sendMessage(chat, 'Введите повторно телефон');
+        getTelephone(msg, bot);
     }
+};
+
+let finishOrder = (msg) => {
+    telephone = msg.text;
+    bucket.saveToBd(msg, telephone, address, selectedPizzeria, con, bot);
+    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+    bucketList.length = 0;
 };
 
     // let first_name1, last_name1, list1, address1, phone1, amount1;
@@ -249,3 +247,55 @@ let validatePhone = (telephone) => {
     //     console.log('Example app listening on port 3000!');
     // });
 
+let funStuff = (msg) => {
+
+    let getNotes = (type) => {
+        return new Promise(function (resolve, reject) {
+            con.query("SELECT * FROM notes", function (err, result) {
+                let res = JSON.stringify(result);
+                let res2 = JSON.parse(res);
+
+                for (let i = 0; i < res2.length; i++) {
+                    if(res2[i].type === type) {
+                        notes.push(res2[i].name);
+                    }
+                }
+                if (err) {
+                    return reject(err);
+                }
+                resolve(notes);
+            });
+        });
+    };
+
+
+    setInterval(function(){
+        getNotes('notes').then(() => {
+            let curDate = new Date().getDay();
+            let userId;
+
+            if (curDate === 6)
+                bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
+        });
+
+    }, 86400);
+
+    setInterval(function(){
+        getNotes('sales').then(() => {
+            let curDate = new Date().getDay();
+            bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
+        });
+
+    }, 86400 * 5);
+
+    setInterval(function(){
+        getNotes('sales').then(() => {
+            let curDate = new Date().getDay();
+            let generatePic = Math.floor((Math.random() * 8));
+            bot.sendPhoto(msg.from.id, `D:/telegram_bot/img//kote_${generatePic}.jpg`, {caption: `Have fun))`});
+
+        });
+
+    }, 86400 * 3);
+
+};
