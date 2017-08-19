@@ -5,7 +5,7 @@ class BucketLogic {
         this.bill = 0;
     }
 
-   showBucket = (msg, bot) => {
+    showBucket = (msg, bot) => {
         this.bot = bot;
         let buttons = [];
         for (let i = 0; i <= this.bucketList.length - 1; i++) {
@@ -17,7 +17,7 @@ class BucketLogic {
         }
         buttons.create(buttons, msg, 'Ваша корзина', this.bot);
         this.formBill(msg, bot);
-        buttons.saveButton(msg);
+
     };
 
 // work with bill
@@ -25,7 +25,10 @@ class BucketLogic {
     formBill = (msg, bot) => {
         this.getTotalAmount();
         this.getOrderInfo();
-        bot.sendMessage(msg.from.id, `Ваш заказ ${this.bill}`)
+        bot.sendMessage(msg.from.id, `Ваш заказ ${this.bill}`).then(() => {
+                this.buttons.saveButton(msg);
+        });
+
     };
 
     getTotalAmount = () => {

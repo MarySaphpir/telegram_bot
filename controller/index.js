@@ -4,8 +4,9 @@ import bucket from './BucketLogic';
 let TelegramBot = require('node-telegram-bot-api');
 let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
+// let express = require('express');
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias =[], bucketList = [], address, telephone,
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], address, telephone,
     selectedPizzeria, status;
 
 let con = mysql.createConnection({
@@ -37,21 +38,31 @@ bot.on('callback_query', function (msg) {
         choosePizza(msg);
     } else if (msg.data === 'Собрать свою') {
         createPizza(msg);
+    }else if (msg.data === 'readyForOrder') {
+        choosePizzeria(msg);
+    } else if (msg.data === 'getInfo') {
+        console.log('getInfo');
+        bot.sendMessage(msg.from.id, 'https://pizza12bot.herokuapp.com/');
     }
 });
 
 bot.on('message', (msg) => {
-    if (msg.text === '/выбратьпиццерию') {
-        choosePizzeria(msg);
-        chat = msg;
-    } else if (status === 'enteredAddress') {
-        console.log(msg.text);
+    if (msg.text === '/start'){
+        firstChoice(msg);
+    }else if (status === 'enteredAddress') {
         getTelephone(msg, bot);
     } else if (status === 'saveToBd') {
-        telephone = msg.text;
-        bucket.saveToBd(msg, telephone, address,selectedPizzeria, con, bot);
-        bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-        bucketList.length = 0;
+        let phoneno = /^\[0-9]{10}/;
+        if(msg.text.match(phoneno)) {
+            telephone = msg.text;
+            bucket.saveToBd(msg, telephone, address, selectedPizzeria, con, bot);
+            bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+            bucketList.length = 0;
+        }
+        else {
+            bot.sendMessage(chat, 'Введите повторно телефон');
+            getTelephone(msg, bot);
+        }
     }
 });
 
@@ -89,6 +100,21 @@ let getInfo = (sql, col1, col2) => {
     })
 };
 // choosing
+let firstChoice = (msg) => {
+    let text = 'Приступим к заказу';
+    let options = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: 'Посмотреть информацию', callback_data: 'getInfo' }],
+                [{ text: 'Приступить к заказу', callback_data: 'readyForOrder' }]
+            ]
+        })
+    };
+    // buttons.create(options, msg, text, bot);
+    // console.log(msg.data)
+    bot.sendMessage(msg.chat.id, text, options);
+};
+
 let mainChoice = (msg) => {
     let text = 'Готовую пиццу или собрать свою?';
     let options = [
@@ -118,9 +144,7 @@ let showMenu = (msg) => {
         }
         //
         setTimeoutForButton();
-
     });
-
 };
 
 let setTimeoutForButton = () => {
@@ -166,4 +190,62 @@ let getTelephone = (msg) => {
     bot.sendMessage(chat, 'Введите телефон').then(function () {
     })
 };
+
+let validatePhone = (telephone) => {
+    let phoneno = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+    if(telephone.value.match(phoneno)) {
+        telephone = telephone;
+        bot.sendMessage(chat, 'Введите телефон12121')
+    }
+    else {
+        bot.sendMessage(chat, 'Введите 1345')
+    }
+};
+
+    // let first_name1, last_name1, list1, address1, phone1, amount1;
+    // let app = express();
+    // app.use(express.static('D:\\telegram_bot\\pages'));
+    // app.use(express.static('D:\\telegram_bot\\styles'));
+    // app.use(express.static('D:\\telegram_bot\\js'));
+    // app.set('views', 'D:\\telegram_bot\\controller');
+    // app.set('view engine', 'jade');
+    //
+    // app.get('/', function (req, res) {
+    //
+    //     let connection = mysql.createConnection({
+    //         host: "localhost",
+    //         user: "root",
+    //         password: "cfvgbh",
+    //         database: "pizzeria"
+    //     });
+    //
+    //     res.setHeader('Content-Type', 'text/html');
+    //     connection.connect(function (err) {
+    //     });
+    //
+    //     connection.query('SELECT * FROM orders ORDER BY id DESC LIMIT 1', function (err, rows) {
+    //         for (let i = 0; i < rows.length; i++) {
+    //             first_name1 = rows[i].first_name;
+    //             last_name1 = rows[i].last_name;
+    //             list1 = rows[i].list;
+    //             address1 = rows[i].address;
+    //             phone1 = rows[i].phone;
+    //             amount1 = rows[i].amount;
+    //         }
+    //         res.render('index', {
+    //             first_name: this.first_name1,
+    //             last_name: last_name1,
+    //             list: list1,
+    //             address: address1,
+    //             phone: phone1,
+    //             amount: amount1
+    //         });
+    //         res.end();
+    //
+    //     });
+    // });
+    //
+    // app.listen(3000, function () {
+    //     console.log('Example app listening on port 3000!');
+    // });
 
