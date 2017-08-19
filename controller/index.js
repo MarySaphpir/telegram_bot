@@ -41,7 +41,6 @@ bot.on('callback_query', function (msg) {
     }else if (msg.data === 'readyForOrder') {
         choosePizzeria(msg);
     } else if (msg.data === 'getInfo') {
-        console.log('getInfo');
         bot.sendMessage(msg.from.id, 'https://pizza12bot.herokuapp.com/');
     }
 });
@@ -101,8 +100,6 @@ let firstChoice = (msg) => {
             ]
         })
     };
-    // buttons.create(options, msg, text, bot);
-    // console.log(msg.data)
     bot.sendMessage(msg.chat.id, text, options);
 };
 
@@ -161,7 +158,7 @@ let createPizza = (msg) => {
 let choosePizza = (msg) => {
     getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function () {
         buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
-        buttons.saveButton(msg);
+        setTimeout(() => {buttons.saveButton(msg);}, 1000)
     });
 };
 
