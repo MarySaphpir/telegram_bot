@@ -28,7 +28,6 @@ module.exports = {
         }
         ]
     },
-
     node: {
         __dirname: false,
         fs: 'empty',

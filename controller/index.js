@@ -1,11 +1,15 @@
-import buttons from './Buttons';
-import bucket from './BucketLogic';
+// import buttons from './Buttons';
+// import bucket from './BucketLogic';
 
 let TelegramBot = require('node-telegram-bot-api');
-let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
+let token = '418436060:AAHAg3lRN1ae_zjCoHMgKZB14xUVv5Qdiys';
 let mysql = require('mysql');
+let express = require('express');
+const buttons = require('./Buttons');
+const bucket = require('./BucketLogic');
+
 let bot = new TelegramBot(token, {polling: true});
-let chat, mainEntry = [], fillings = [], pizzerias =[], bucketList = [], address, telephone,
+let chat, mainEntry = [], fillings = [], pizzerias = [], bucketList = [], notes = [], address, telephone,
     selectedPizzeria, status;
 
 let con = mysql.createConnection({
@@ -37,21 +41,21 @@ bot.on('callback_query', function (msg) {
         choosePizza(msg);
     } else if (msg.data === 'Собрать свою') {
         createPizza(msg);
+    }else if (msg.data === 'readyForOrder') {
+        choosePizzeria(msg);
+    } else if (msg.data === 'getInfo') {
+        bot.sendMessage(msg.from.id, 'https://pizza12bot.herokuapp.com/');
     }
 });
 
 bot.on('message', (msg) => {
-    if (msg.text === '/выбратьпиццерию') {
-        choosePizzeria(msg);
-        chat = msg;
-    } else if (status === 'enteredAddress') {
-        console.log(msg.text);
+    if (msg.text === '/start'){
+        funStuff(msg);
+        firstChoice(msg);
+    }else if (status === 'enteredAddress') {
         getTelephone(msg, bot);
     } else if (status === 'saveToBd') {
-        telephone = msg.text;
-        bucket.saveToBd(msg, telephone, address,selectedPizzeria, con, bot);
-        bot.sendMessage(msg.from.id, 'Ваш заказ принят');
-        bucketList.length = 0;
+        validatePhone(msg)
     }
 });
 
@@ -89,6 +93,19 @@ let getInfo = (sql, col1, col2) => {
     })
 };
 // choosing
+let firstChoice = (msg) => {
+    let text = 'Приступим к заказу';
+    let options = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: 'Посмотреть информацию', callback_data: 'getInfo' }],
+                [{ text: 'Приступить к заказу', callback_data: 'readyForOrder' }]
+            ]
+        })
+    };
+    bot.sendMessage(msg.chat.id, text, options);
+};
+
 let mainChoice = (msg) => {
     let text = 'Готовую пиццу или собрать свою?';
     let options = [
@@ -118,9 +135,7 @@ let showMenu = (msg) => {
         }
         //
         setTimeoutForButton();
-
     });
-
 };
 
 let setTimeoutForButton = () => {
@@ -146,7 +161,7 @@ let createPizza = (msg) => {
 let choosePizza = (msg) => {
     getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function () {
         buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
-        buttons.saveButton(msg);
+        setTimeout(() => {buttons.saveButton(msg);}, 1000)
     });
 };
 
@@ -167,3 +182,120 @@ let getTelephone = (msg) => {
     })
 };
 
+let validatePhone = (msg) => {
+    let phoneno = /^[0-9]{9,10}$/;
+    if(msg.text.match(phoneno)) {
+        finishOrder(msg);
+    }
+    else {
+        bot.sendMessage(chat, 'Введите повторно телефон');
+        getTelephone(msg, bot);
+    }
+};
+
+let finishOrder = (msg) => {
+    telephone = msg.text;
+    bucket.saveToBd(msg, telephone, address, selectedPizzeria, con, bot);
+    bot.sendMessage(msg.from.id, 'Ваш заказ принят');
+    bucketList.length = 0;
+};
+
+    let first_name1, last_name1, list1, address1, phone1, amount1;
+    let app = express();
+    app.use(express.static('D:\\telegram_bot\\pages'));
+    app.use(express.static('D:\\telegram_bot\\styles'));
+    app.use(express.static('D:\\telegram_bot\\js'));
+    app.set('views', 'D:\\telegram_bot\\controller');
+    app.set('view engine', 'jade');
+
+    app.get('/', function (req, res) {
+
+        let connection = mysql.createConnection({
+            host: "localhost",
+            user: "root",
+            password: "cfvgbh",
+            database: "pizzeria"
+        });
+
+        res.setHeader('Content-Type', 'text/html');
+        connection.connect(function (err) {
+        });
+
+        connection.query('SELECT * FROM orders ORDER BY id DESC LIMIT 1', function (err, rows) {
+            for (let i = 0; i < rows.length; i++) {
+                first_name1 = rows[i].first_name;
+                last_name1 = rows[i].last_name;
+                list1 = rows[i].list;
+                address1 = rows[i].address;
+                phone1 = rows[i].phone;
+                amount1 = rows[i].amount;
+            }
+            res.render('index', {
+                first_name: this.first_name1,
+                last_name: last_name1,
+                list: list1,
+                address: address1,
+                phone: phone1,
+                amount: amount1
+            });
+            res.end();
+
+        });
+    });
+
+    app.listen(3000, function () {
+        console.log('Example app listening on port 3000!');
+    });
+
+let funStuff = (msg) => {
+
+    let getNotes = (type) => {
+        return new Promise(function (resolve, reject) {
+            con.query("SELECT * FROM notes", function (err, result) {
+                let res = JSON.stringify(result);
+                let res2 = JSON.parse(res);
+
+                for (let i = 0; i < res2.length; i++) {
+                    if(res2[i].type === type) {
+                        notes.push(res2[i].name);
+                    }
+                }
+                if (err) {
+                    return reject(err);
+                }
+                resolve(notes);
+            });
+        });
+    };
+
+
+    setInterval(function(){
+        getNotes('notes').then(() => {
+            let curDate = new Date().getDay();
+            let userId;
+
+            if (curDate === 6)
+                bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
+        });
+
+    }, 86400);
+
+    setInterval(function(){
+        getNotes('sales').then(() => {
+            let curDate = new Date().getDay();
+            bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
+        });
+
+    }, 86400 * 5);
+
+    setInterval(function(){
+        getNotes('sales').then(() => {
+            let curDate = new Date().getDay();
+            let generatePic = Math.floor((Math.random() * 8));
+            bot.sendPhoto(msg.from.id, `D:/telegram_bot/img//kote_${generatePic}.jpg`, {caption: `Have fun))`});
+
+        });
+
+    }, 86400 * 3);
+
+};

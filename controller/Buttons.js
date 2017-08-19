@@ -1,8 +1,7 @@
 class Buttons{
     constructor(){
-        this.bot;
     }
-    create = (entry2, msg, title, bot) => {
+    create(entry2, msg, title, bot) {
         this.bot = bot;
         let options = {
             reply_markup: JSON.stringify({
@@ -14,7 +13,7 @@ class Buttons{
         bot.sendMessage(this.chat, title, options);
     };
 
-    saveButton = (msg) => {
+    saveButton(msg){
         let text = 'Далее?';
         let options = [
             [{text: 'Да', callback_data: 'Да'}],
@@ -26,4 +25,3 @@ class Buttons{
 }
 
 let buttons;
-export default buttons = new Buttons();

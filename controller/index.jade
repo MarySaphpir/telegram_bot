@@ -1,0 +1,65 @@
+doctype html
+html(lang='en')
+    head
+        meta(charset='UTF-8')
+        title Завершення замовлення
+        meta(name='viewport', content='width=device-width, initial-scale=1.0')
+        meta(property='og:title', content='Welcome to pizza_bot')
+        meta(property='og:image', content='../img/pizza.png')
+        // paste url image
+        meta(property='og:image:type', content='image/png')
+        meta(property='og:image:width', content='600')
+        meta(property='og:image:height', content='600')
+        meta(property='og:description', content='Ваше замовлення майже готове. Пройдіть за посиланням, щою завершити...')
+        link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.css')
+        link(href='https://fonts.googleapis.com/icon?family=Material+Icons', rel='stylesheet')
+        link(rel='stylesheet', href='order-page.css')
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js')
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.js')
+        script(src='./main.js')
+    body
+        .container
+            .row
+                .welcome-img
+                    a.welcome-page(href='../welcome.html')
+                        img.pizza(src='../img/pizza.png', alt='pizza', title='Почати все спочатку')
+                .col.s12.m12.wrapper
+                    h1.selected-pizzeria Name Pizzeria
+                    .our-order Ваше замовлення: 
+                    ol.selected.row
+                        li
+                            .choice.col.s9.m9
+                                != list
+                    .row.total
+                        .col.s9.m9
+                            | Загальна сума:
+                        .total-price.col.s3.m3
+                            != amount
+                    .row
+                        .form-message Перевірте дані та підтвердіть замовелення
+                        form.col.s12
+                            .row
+                                .input-field.col.s12
+                                    i.material-icons.prefix account_circle
+                                    input#icon_prefix.validate(type='text', disabled='')
+                                    label(for='icon_prefix')
+                                        != first_name
+                                .input-field.col.s12
+                                    i.material-icons.prefix account_circle
+                                    input#icon_prefix2.validate(type='text', disabled='')
+                                    label(for='icon_prefix2')
+                                        != last_name
+                                .input-field.col.s12
+                                    i.material-icons.prefix phone
+                                    input#icon_telephone.validate(type='tel', disabled='')
+                                    label(for='icon_telephone', data-error='wrong')
+                                        != phone
+                                .input-field.col.s12
+                                    i.material-icons.prefix home
+                                    input#icon_home.validate(type='tel', disabled='')
+                                    label(for='icon_telephone', data-error='wrong')
+                                        != address
+                            #qweqwe.center-align
+                                button#submit.btn-large.waves-effect.waves-light(type='submit', name='action')
+                                    | Підтвердити
+                                    i.material-icons.right send
