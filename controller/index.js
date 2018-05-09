@@ -1,8 +1,5 @@
-// import buttons from './Buttons';
-// import bucket from './BucketLogic';
-
 let TelegramBot = require('node-telegram-bot-api');
-let token = '418436060:AAHAg3lRN1ae_zjCoHMgKZB14xUVv5Qdiys';
+let token = '430043343:AAFMmGRtyNMiFRdZN6Iy1rhNzz7UZpLMSh4';
 let mysql = require('mysql');
 let express = require('express');
 const buttons = require('./Buttons');
@@ -30,21 +27,21 @@ bot.on('callback_query', function (msg) {
         bucket.saveToBucket(msg.data)
     } else if (pizzerias.includes(msg.data)) {
         selectedPizzeria = pizzerias.indexOf(msg.data) + 1;
-        showMenu(msg);
-    } else if (msg.data === 'orderPizza') {
         mainChoice(msg);
-    } else if (msg.data === 'Да') {
+    }  else if (msg.data === 'Да') {
         enterAddress(msg, bot);
     } else if (msg.data === 'Посмотреть заказ') {
         bucket.showBucket(msg, bot);
     } else if (msg.data === 'Готовую') {
-        choosePizza(msg);
+        showMenu(msg);
     } else if (msg.data === 'Собрать свою') {
         createPizza(msg);
     }else if (msg.data === 'readyForOrder') {
         choosePizzeria(msg);
     } else if (msg.data === 'getInfo') {
         bot.sendMessage(msg.from.id, 'https://pizza12bot.herokuapp.com/');
+    } else if (msg.data === 'orderCoffee') {
+        chooseCoffee(msg)
     }
 });
 
@@ -56,6 +53,8 @@ bot.on('message', (msg) => {
         getTelephone(msg, bot);
     } else if (status === 'saveToBd') {
         validatePhone(msg)
+    } else {
+        bot.sendMessage(msg.chat.id, 'Извините, но я не могу вас понять :( Повторите ввод');
     }
 });
 
@@ -98,8 +97,9 @@ let firstChoice = (msg) => {
     let options = {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: 'Посмотреть информацию', callback_data: 'getInfo' }],
-                [{ text: 'Приступить к заказу', callback_data: 'readyForOrder' }]
+                [{ text: 'Ознакомтесь с пиццериями', callback_data: 'getInfo' }],
+                [{ text: 'Приступить к заказу', callback_data: 'readyForOrder' }],
+                [{ text: 'Заказать кофе', callback_data: 'orderCoffee' }]
             ]
         })
     };
@@ -117,7 +117,13 @@ let mainChoice = (msg) => {
 
 let choosePizzeria = (msg) => {
     getInfo("SELECT * FROM pizzeria", 'name').then(function () {
-        buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
+        buttons.create(mainEntry, msg, 'Выберите пиццерию.', bot);
+    })
+};
+
+let chooseCoffee = (msg) => {
+    getInfo("SELECT * FROM coffee", 'name').then(function () {
+        buttons.create(mainEntry, msg, 'Выберите пиццерию.', bot);
     })
 };
 
@@ -134,8 +140,11 @@ let showMenu = (msg) => {
             }
         }
         //
-        setTimeoutForButton();
-    });
+
+
+    }).then(() => {setTimeout(function () {
+        choosePizza(msg);
+    }, 3000)})
 };
 
 let setTimeoutForButton = () => {
@@ -154,14 +163,14 @@ let setTimeoutForButton = () => {
 let createPizza = (msg) => {
     getInfo("SELECT * FROM filter", 'filter', 'cost').then(function () {
         buttons.create(mainEntry, msg, 'Выберите начинку', bot);
-        buttons.saveButton(msg);
+        setTimeout(function() {buttons.saveButton(msg, bot)}, 3000)
     });
 };
 
 let choosePizza = (msg) => {
     getInfo("SELECT * FROM pizza", 'pizza_name', 'cost').then(function () {
         buttons.create(mainEntry, msg, 'Выберите пиццу', bot);
-        setTimeout(() => {buttons.saveButton(msg);}, 1000)
+        setTimeout(function() {buttons.saveButton(msg, bot)}, 3000)
     });
 };
 
@@ -200,7 +209,7 @@ let finishOrder = (msg) => {
     bucketList.length = 0;
 };
 
-    let first_name1, last_name1, list1, address1, phone1, amount1;
+    let first_name, last_name, list, addressa, phone, amount;
     let app = express();
     app.use(express.static('D:\\telegram_bot\\pages'));
     app.use(express.static('D:\\telegram_bot\\styles'));
@@ -223,20 +232,20 @@ let finishOrder = (msg) => {
 
         connection.query('SELECT * FROM orders ORDER BY id DESC LIMIT 1', function (err, rows) {
             for (let i = 0; i < rows.length; i++) {
-                first_name1 = rows[i].first_name;
-                last_name1 = rows[i].last_name;
-                list1 = rows[i].list;
-                address1 = rows[i].address;
-                phone1 = rows[i].phone;
-                amount1 = rows[i].amount;
+                first_name = rows[i].first_name;
+                last_name = rows[i].last_name;
+                list = rows[i].list;
+                addressa = rows[i].address;
+                phone = rows[i].phone;
+                amount = rows[i].amount;
             }
             res.render('index', {
-                first_name: this.first_name1,
-                last_name: last_name1,
-                list: list1,
-                address: address1,
-                phone: phone1,
-                amount: amount1
+                first_name: first_name,
+                last_name: last_name,
+                list: list,
+                address: addressa,
+                phone: phone,
+                amount: amount
             });
             res.end();
 
@@ -278,7 +287,7 @@ let funStuff = (msg) => {
                 bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
         });
 
-    }, 86400);
+    }, 30000);
 
     setInterval(function(){
         getNotes('sales').then(() => {
@@ -286,16 +295,15 @@ let funStuff = (msg) => {
             bot.sendMessage(msg.from.id, notes[Math.floor((Math.random() * 4))]);
         });
 
-    }, 86400 * 5);
+    }, 40000);
 
     setInterval(function(){
         getNotes('sales').then(() => {
-            let curDate = new Date().getDay();
             let generatePic = Math.floor((Math.random() * 8));
             bot.sendPhoto(msg.from.id, `D:/telegram_bot/img//kote_${generatePic}.jpg`, {caption: `Have fun))`});
 
         });
 
-    }, 86400 * 3);
+    }, 50000);
 
 };

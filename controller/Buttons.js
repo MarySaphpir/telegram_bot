@@ -1,8 +1,7 @@
-class Buttons{
+class Buttons {
     constructor(){
     }
     create(entry2, msg, title, bot) {
-        this.bot = bot;
         let options = {
             reply_markup: JSON.stringify({
                 inline_keyboard: entry2,
@@ -13,15 +12,14 @@ class Buttons{
         bot.sendMessage(this.chat, title, options);
     };
 
-    saveButton(msg){
+    saveButton(msg, bot){
         let text = 'Далее?';
         let options = [
             [{text: 'Да', callback_data: 'Да'}],
             [{text: 'Посмотреть заказ', callback_data: 'Посмотреть заказ'}]
         ];
-        this.create(options, msg, text, this.bot)
+        this.create(options, msg, text, bot)
     };
 
 }
-
-let buttons;
+module.exports = new Buttons();

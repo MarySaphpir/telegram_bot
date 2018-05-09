@@ -16,8 +16,18 @@ class BucketLogic {
         }
         // console.log(msg.from.id);
         this.createButtons(buttons, msg, 'Ваша корзина', bot);
-        this.formBill(msg);
-        this.saveButton(msg, bot);
+        setTimeout(function () {
+            let options = {
+                reply_markup: JSON.stringify({
+                    inline_keyboard: [
+                        [{text: 'Да', callback_data: 'Да'}]
+                    ],
+                    parse_mode: 'Markdown',
+                })
+            };
+            // chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+            bot.sendMessage(msg.from.id, 'Далее?', options);
+        }, 1000)
     };
 
 // work with bill
@@ -25,7 +35,8 @@ class BucketLogic {
     formBill(msg, bot) {
         this.getTotalAmount();
         this.getOrderInfo();
-        bot.sendMessage(msg.from.id, `Ваш заказ ${this.bill}`)
+        bot.sendMessage(msg.from.id, `Ваш заказ ${this.order} на сумму ${this.bill} грн`);
+
     };
 
     getTotalAmount(){
@@ -53,6 +64,9 @@ class BucketLogic {
         con.query(sql, function (err) {
             if (err) throw err;
         });
+        this.bucketList.length = 0;
+        this.order.length = 0;
+        this.bill = 0;
     };
 
     saveToBucket(order) {
@@ -84,5 +98,4 @@ class BucketLogic {
         bot.sendMessage(msg.from.id, text, options);
     };
 }
-
-let bucket;
+module.exports = new BucketLogic();

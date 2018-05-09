@@ -5,27 +5,22 @@ html(lang='en')
         title Завершення замовлення
         meta(name='viewport', content='width=device-width, initial-scale=1.0')
         meta(property='og:title', content='Welcome to pizza_bot')
-        meta(property='og:image', content='../img/pizza.png')
-        // paste url image
+        meta(property='og:image', content='https://preview.ibb.co/cn0ghQ/pizza.png')
         meta(property='og:image:type', content='image/png')
         meta(property='og:image:width', content='600')
         meta(property='og:image:height', content='600')
         meta(property='og:description', content='Ваше замовлення майже готове. Пройдіть за посиланням, щою завершити...')
         link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.css')
         link(href='https://fonts.googleapis.com/icon?family=Material+Icons', rel='stylesheet')
-        link(rel='stylesheet', href='order-page.css')
+        link(rel='stylesheet', href='../styles/styles/main')
         script(src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js')
         script(src='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.js')
-        script(src='./main.js')
     body
         .container
             .row
-                .welcome-img
-                    a.welcome-page(href='../welcome.html')
-                        img.pizza(src='../img/pizza.png', alt='pizza', title='Почати все спочатку')
                 .col.s12.m12.wrapper
-                    h1.selected-pizzeria Name Pizzeria
-                    .our-order Ваше замовлення: 
+                    //h1.selected-pizzeria Name Pizzeria
+                    .our-order Ваше замовлення:
                     ol.selected.row
                         li
                             .choice.col.s9.m9
@@ -59,7 +54,8 @@ html(lang='en')
                                     input#icon_home.validate(type='tel', disabled='')
                                     label(for='icon_telephone', data-error='wrong')
                                         != address
-                            #qweqwe.center-align
-                                button#submit.btn-large.waves-effect.waves-light(type='submit', name='action')
-                                    | Підтвердити
-                                    i.material-icons.right send
+                                #qweqwe.center-align
+                                    button#submit.btn-large.waves-effect.waves-light(type='submit', name='action')
+                                        a.bot-url(href='tg://resolve?domain=amazing_pizza_bot', style='color: white')  Підтвердити
+                                        i.material-icons.right send
+
